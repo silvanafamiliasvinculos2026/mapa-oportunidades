@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa de Oportunidades 2025 - Villarrica</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .badge-ocupacion { background-color: #f59e0b; color: white; }
+    .badge-ingresos { background-color: #10b981; color: white; }
+    .badge-salud { background-color: #06b6d4; color: white; }
+    .badge-autonomia { background-color: #8b5cf6; color: white; }
+    .badge-vivienda { background-color: #ec4899; color: white; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+  <!-- Encabezado -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-600 p-2.5 rounded-xl shadow-lg">
+          <i class="fa-solid fa-map-location-dot text-2xl text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Mapa Local de Oportunidades 2025</h1>
+          <p class="text-slate-400 text-xs">Programa Vínculos Versión 19 - Comuna de Villarrica</p>
+        </div>
+      </div>
+      
+      <!-- Buscador -->
+      <div class="w-full md:w-96 relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="searchInput" placeholder="Buscar por programa, requisito, institución..." 
+          class="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+  </header>
+
+  <!-- Filtros por Dimensión -->
+  <nav class="bg-white border-b border-slate-200 shadow-xs sticky top-[73px] z-40 overflow-x-auto">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex gap-2 min-w-max">
+      <button onclick="filterDimension('TODAS', this)" class="dim-btn active bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
+        Todas las Dimensiones
+      </button>
+      <button onclick="filterDimension('OCUPACIÓN', this)" class="dim-btn bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 px-3 py-1.5 rounded-lg text-xs font-semibold">
+        Ocupación
+      </button>
+      <button onclick="filterDimension('INGRESOS', this)" class="dim-btn bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs font-semibold">
+        Ingresos
+      </button>
+      <button onclick="filterDimension('SALUD', this)" class="dim-btn bg-cyan-50 text-cyan-900 border border-cyan-200 hover:bg-cyan-100 px-3 py-1.5 rounded-lg text-xs font-semibold">
+        Salud
+      </button>
+      <button onclick="filterDimension('AUTONOMÍA', this)" class="dim-btn bg-purple-50 text-purple-900 border border-purple-200 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-xs font-semibold">
+        Autonomía
+      </button>
+      <button onclick="filterDimension('VIVIENDA Y ENTORNO', this)" class="dim-btn bg-pink-50 text-pink-900 border border-pink-200 hover:bg-pink-100 px-3 py-1.5 rounded-lg text-xs font-semibold">
+        Vivienda y Entorno
+      </button>
+    </div>
+  </nav>
+
+  <!-- Grilla -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+  </main>
+
+  <script>
+    let allData = [];
+    let activeDim = 'TODAS';
+
+    fetch('datos.json')
+      .then(res => res.json())
+      .then(data => {
+        allData = data;
+        renderData();
+      });
+
+    function getBadgeClass(dim) {
+      if (dim.includes('OCUP')) return 'badge-ocupacion';
+      if (dim.includes('INGR')) return 'badge-ingresos';
+      if (dim.includes('SALUD')) return 'badge-salud';
+      if (dim.includes('AUTO')) return 'badge-autonomia';
+      return 'badge-vivienda';
+    }
+
+    function renderData() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const grid = document.getElementById('cardsGrid');
+      grid.innerHTML = '';
+
+      const filtered = allData.filter(item => {
+        const matchDim = activeDim === 'TODAS' || item.dimension.toUpperCase().includes(activeDim.toUpperCase());
+        const matchSearch = item.programa.toLowerCase().includes(search) || 
+                            item.descripcion.toLowerCase().includes(search) || 
+                            item.requisitos.toLowerCase().includes(search) ||
+                            item.institucion.toLowerCase().includes(search);
+        return matchDim && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">
+          <i class="fa-regular fa-folder-open text-4xl mb-2"></i>
+          <p class="font-medium">No se encontraron oportunidades registradas con esa búsqueda.</p>
+        </div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const badgeClass = getBadgeClass(item.dimension);
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <span class="px-2.5 py-1 rounded text-xs font-bold uppercase ${badgeClass}">
+                ${item.dimension}
+              </span>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium border border-slate-200">
+                ${item.tipoServicio}
+              </span>
+            </div>
+            <h3 class="font-bold text-slate-900 text-base mb-1">${item.programa}</h3>
+            <p class="text-xs text-blue-700 font-semibold mb-3 flex items-center gap-1">
+              <i class="fa-solid fa-building"></i> ${item.institucion}
+            </p>
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">${item.descripcion}</p>
+          </div>
+
+          <div class="space-y-2 text-xs border-t border-slate-100 pt-3 bg-slate-50 -mx-5 -mb-5 p-4 rounded-b-xl">
+            <p class="text-slate-700"><strong><i class="fa-solid fa-list-check text-slate-400 mr-1"></i> Requisitos:</strong> ${item.requisitos}</p>
+            <p class="text-slate-700"><strong><i class="fa-solid fa-users text-slate-400 mr-1"></i> Cupos:</strong> ${item.cupos}</p>
+            ${item.direccion ? `<p class="text-slate-700"><strong><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> Ubicación:</strong> ${item.direccion}</p>` : ''}
+            ${item.contacto ? `<p class="text-slate-700"><strong><i class="fa-solid fa-phone text-slate-400 mr-1"></i> Contacto:</strong> ${item.contacto}</p>` : ''}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterDimension(dim, btn) {
+      activeDim = dim;
+      document.querySelectorAll('.dim-btn').forEach(b => {
+        b.classList.remove('bg-slate-900', 'text-white');
+      });
+      btn.classList.add('bg-slate-900', 'text-white');
+      renderData();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', renderData);
+  </script>
+</body>
+</html>
